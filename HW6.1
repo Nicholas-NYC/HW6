@@ -1,0 +1,64 @@
+attach(Household_Pulse_data)
+Household_Pulse_data$vaxx <- (Household_Pulse_data$RECVDVACC == "yes got vaxx")
+is.na(Household_Pulse_data$vaxx) <- which(Household_Pulse_data$RECVDVACC == "NA") 
+
+
+pick_use1 <- (Household_Pulse_data$REGION == "Midwest") # just for example!
+dat_use1 <- subset(Household_Pulse_data, pick_use1)
+
+# and to be finicky, might want to use this for factors after subsetting in case some get lost
+dat_use1$RECVDVACC <- droplevels(dat_use1$RECVDVACC) 
+
+summary(Household_Pulse_data)
+
+
+model_logit1 <- glm(vaxx ~ EEDUC + MS + RRACE + RHISPANIC + GENID_DESCRIBE,
+                    family = binomial, data = dat_use1)
+
+summary(model_logit1)
+#  With RRACEAsian we reject the Null Hypothesis and replace with the alternative Hypothesis.  In the 
+#  relationship between RRACEAsian and vaxx we find that there is significance at a .001 level.
+#  Also, we know based on the estimates and a positive number, the racial group RRACEAsian are 
+#  very likely to be vaccinated.
+#  If we were to look at RRACEBlack we find different results.  First we would reject the Null Hypothesis
+#  and replace with the alternative Hypothesis.  Looking at the data out put we would also know that with
+#  a .001 level significance.  However when see a different result when evaluating the Estimate.  Since
+#  RRACEBlack returned a negative number we know that this racial group RRACEBlack is less likely to be vaxxed.
+#  Yes they do have expected signs, if neg for example with RRACEBlack 
+#  the value is negative which would mean the Racial group is less likely.  Where if we would intemperate the
+#  positive value for RRRACEAsain we know they are more likely to be vaxxed.
+#  
+
+model_logit2 <- glm(vaxx ~ EEDUC*RRACE + MS + RHISPANIC + GENID_DESCRIBE,
+                    family = binomial, data = dat_use1)
+
+summary(model_logit2)
+
+#  I decided to use the material give on the class page, for simplicity and foudn that when viewing the data
+#  In the Midewest if your college educated there is signficance of your vaxx status.  If your not atleast
+#  EEDUCsome coll there is less significance if say you only have some high school education but not a grad.
+summary(Household_Pulse_data)
+to_be_predicted2<- data.frame(EEDUC = "some coll", RRACE = "Asian", MS = "separated", RHISPANIC = "Hispanic", GENID_DESCRIBE = "male",
+                                  data = dat_use1)
+
+to_be_predicted2$yhat<-predict(model_logit1, to_be_predicted2, type="response")
+summary(to_be_predicted2$yhat)
+
+#  Beacuae you chose "yes got vaxxed" from house pulse data code line 2
+#  the proportion and likeliy hood that the person given my choices of 
+#  someone who is Asain and Hispanic with some college and is male would 
+#  be 91% and in my personal opinion very high. 
+
+summary(dat_use1$vaxx)
+
+model_probit1 <- glm(vaxx ~ EEDUC*RRACE + MS + RHISPANIC + GENID_DESCRIBE,
+                     family = binomial (link = 'probit'), data = dat_use1)
+summary(model_probit1)
+require(stargazer)
+stargazer(model_logit2,model_probit1, type = "text")
+
+
+###  In both examples we found that an Advance degree was significant.  The data points also show that there is no
+###  signigicane with RRACEBlack.  When comparing some of the differences I found that Model_Probit 1 's estimated
+###  were closer to 0 than that of the logistic model.  
+
